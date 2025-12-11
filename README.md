@@ -10,7 +10,7 @@ Simple starter project: train a linear regression model to predict `price` from 
 ### Setup
 
 ```bash
-cd "/Users/stevenbryan/Desktop/assn/sem5/MLFinal"
+cd into /MLFinal"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
