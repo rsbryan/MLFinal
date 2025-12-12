@@ -5,7 +5,7 @@ Train a simple linear regression model to predict `price` from housing features.
 ### Setup
 
 ```bash
-cd "/Users/stevenbryan/Desktop/assn/sem5/MLFinal"
+cd into /MLFinal"
 python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -r requirements.txt 
