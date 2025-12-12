@@ -1,11 +1,6 @@
-## House Price Prediction (Linear Regression MVP)
+### House Price Prediction (Linear Regression)
 
-Simple starter project: train a linear regression model to predict `price` from the provided housing features.
-
-### Project layout
-- **`data/usa_housing.csv`**: dataset (copied into the repo)
-- **`train_linear_regression.py`**: trains + evaluates + saves model
-- **`artifacts/linear_regression.joblib`**: saved model pipeline (created after training)
+Train a simple linear regression model to predict `price` from housing features.
 
 ### Setup
 
@@ -13,31 +8,35 @@ Simple starter project: train a linear regression model to predict `price` from 
 cd "/Users/stevenbryan/Desktop/assn/sem5/MLFinal"
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt 
 ```
 
-### Train the MVP model
+### Run (simple commands)
+
+- **1) Linear Regression** (plain least squares):
 
 ```bash
-./.venv/bin/python train_linear_regression.py --data data/usa_housing.csv
+./.venv/bin/python run.py linear
 ```
 
-### Output
-- Prints **R²**, **MAE**, and **RMSE** on a holdout test split
-- Saves the trained pipeline to **`artifacts/linear_regression.joblib`**
-
-### Notes (what the MVP uses)
-- By default, the MVP uses **numeric features** plus optional **date-derived features** (`date_year`, `date_month`, `date_day`).
-- The default model is **Ridge regression** (still a linear regression model) for better numerical stability.
-- If you want plain least-squares Linear Regression, run:
+- **2) Linear + categorical features** (usually better; expected R² ~0.50–0.56):
 
 ```bash
-./.venv/bin/python train_linear_regression.py --data data/usa_housing.csv --model linear
+./.venv/bin/python run.py linear_cat
 ```
-- To include text/categorical columns via one-hot encoding (can be very high-dimensional), run:
+
+- **3) Random Forest + categorical features** (expected R² often ~0.50–0.75):
 
 ```bash
-./.venv/bin/python train_linear_regression.py --data data/usa_housing.csv --include-categorical
+./.venv/bin/python run.py rf
 ```
+
+- **4) CatBoost + categorical features** (install required; expected R² often ~0.55–0.85):
+
+```bash
+./.venv/bin/python run.py catboost
+```
+
+All runs save a `.joblib` model to `artifacts/` by default.
 
 

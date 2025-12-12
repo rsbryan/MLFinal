@@ -8,12 +8,20 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+try:
+    from catboost import CatBoostRegressor  # type: ignore
+
+    HAS_CATBOOST = True
+except Exception:
+    HAS_CATBOOST = False
 
 
 @dataclass(frozen=True)
@@ -51,7 +59,7 @@ def main() -> int:
     )
 
     parser = argparse.ArgumentParser(
-        description="Train a simple Linear Regression house price model (MVP)."
+        description="Train house price models (Linear/Ridge, Random Forest, CatBoost)."
     )
     parser.add_argument(
         "--data",
@@ -80,14 +88,20 @@ def main() -> int:
         "--model",
         type=str,
         default="ridge",
-        choices=["ridge", "linear"],
-        help="Which linear model to use. 'ridge' is more numerically stable for this dataset.",
+        choices=["ridge", "linear", "rf", "catboost"],
+        help="Model to train: ridge, linear, rf (RandomForest), catboost.",
     )
     parser.add_argument(
         "--ridge-alpha",
         type=float,
         default=1.0,
         help="Regularization strength for Ridge (only used when --model ridge).",
+    )
+    parser.add_argument(
+        "--rf-n-estimators",
+        type=int,
+        default=300,
+        help="Number of trees for Random Forest (only used when --model rf).",
     )
     parser.add_argument(
         "--drop-cols",
@@ -110,10 +124,13 @@ def main() -> int:
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path("artifacts/linear_regression.joblib"),
-        help="Where to save the trained model pipeline.",
+        default=None,
+        help="Where to save the trained model pipeline (defaults to artifacts/<model>.joblib).",
     )
     args = parser.parse_args()
+
+    if args.out is None:
+        args.out = Path(f"artifacts/{args.model}.joblib")
 
     df = pd.read_csv(args.data)
     if args.target not in df.columns:
@@ -130,9 +147,12 @@ def main() -> int:
     X = df.drop(columns=[args.target])
     X = _add_date_features(X, args.date_col)
 
-    # Basic preprocessing -> numeric impute and categorical one hot encoding.
+    # Basic preprocessing -> numeric impute and categorical one hot encoding
     numeric_cols = X.select_dtypes(include=["number"]).columns.tolist()
     categorical_cols = [c for c in X.columns if c not in numeric_cols] if args.include_categorical else []
+
+    # Tree models in sklearn generally require dense matrices.
+    onehot_dense = args.model in ("rf", "catboost")
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -151,7 +171,13 @@ def main() -> int:
                 Pipeline(
                     steps=[
                         ("imputer", SimpleImputer(strategy="most_frequent")),
-                        ("onehot", OneHotEncoder(handle_unknown="ignore")),
+                        (
+                            "onehot",
+                            OneHotEncoder(
+                                handle_unknown="ignore",
+                                sparse_output=not onehot_dense,
+                            ),
+                        ),
                     ]
                 ),
                 categorical_cols,
@@ -162,8 +188,24 @@ def main() -> int:
 
     if args.model == "ridge":
         regressor = Ridge(alpha=args.ridge_alpha, random_state=args.random_state)
-    else:
+    elif args.model == "linear":
         regressor = LinearRegression()
+    elif args.model == "rf":
+        regressor = RandomForestRegressor(
+            n_estimators=args.rf_n_estimators,
+            random_state=args.random_state,
+            n_jobs=-1,
+        )
+    else:
+        if not HAS_CATBOOST:
+            raise SystemExit(
+                "CatBoost is not installed. Install it with: pip install catboost\n"
+                "Then rerun with: --model catboost"
+            )
+        regressor = CatBoostRegressor(
+            verbose=False,
+            random_seed=args.random_state,
+        )
 
     model = Pipeline(
         steps=[
@@ -183,8 +225,14 @@ def main() -> int:
     preds = model.predict(X_test)
     metrics = _evaluate(y_test, preds)
 
-    print("=== Linear Regression ===")
-    print(f"model: {args.model}" + (f" (alpha={args.ridge_alpha})" if args.model == "ridge" else ""))
+    print("=== Model Results ===")
+    if args.model == "ridge":
+        model_str = f"ridge (alpha={args.ridge_alpha})"
+    elif args.model == "rf":
+        model_str = f"rf (n_estimators={args.rf_n_estimators})"
+    else:
+        model_str = args.model
+    print(f"model: {model_str}")
     print(f"rows: {len(df)} | features: {X.shape[1]} | target: {args.target}")
     print(f"split: train={len(X_train)} test={len(X_test)}")
     print(f"R^2 : {metrics.r2:.4f}")

@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Model outputs / training logs
+artifacts/
+catboost_info/
+
