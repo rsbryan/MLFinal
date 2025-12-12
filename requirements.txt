@@ -3,5 +3,8 @@ pandas==2.2.3
 scikit-learn==1.5.2
 joblib==1.4.2
 catboost>=1.2.0
+matplotlib==3.10.8
+seaborn==0.13.2
+kaggle==1.6.17
 
 

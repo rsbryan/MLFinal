@@ -5,7 +5,7 @@ Train a simple linear regression model to predict `price` from housing features.
 ### Setup
 
 ```bash
-cd into /MLFinal"
+cd "/path/to/MLFinal"
 python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -r requirements.txt 
@@ -28,15 +28,30 @@ pip3 install -r requirements.txt
 - **3) Random Forest + categorical features** (expected R² often ~0.50–0.75):
 
 ```bash
-./.venv/bin/python run.py rf
+./.venv/bin/python run.py rf --quick
 ```
 
 - **4) CatBoost + categorical features** (install required; expected R² often ~0.55–0.85):
 
 ```bash
-./.venv/bin/python run.py catboost
+./.venv/bin/python run.py catboost --quick
 ```
 
 All runs save a `.joblib` model to `artifacts/` by default.
+
+### Dataset
+https://www.kaggle.com/datasets/ahmedshahriarsakib/usa-real-estate-dataset?resource=download
+- Default dataset path is `data/realtor-data.zip.csv` (not committed — it’s large).
+- Recommended: download it via Kaggle (requires Kaggle API credentials):
+
+```bash
+./.venv/bin/python scripts/download_data.py
+```
+
+- Then train:
+
+```bash
+./.venv/bin/python run.py rf --quick
+```
 
 

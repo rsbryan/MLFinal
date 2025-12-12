@@ -2,8 +2,15 @@
 __pycache__/
 *.pyc
 .DS_Store
+.cache/
+.mplconfig/
+figures/
 
 # Model outputs / training logs
 artifacts/
 catboost_info/
+
+# Large dataset (keep local)
+data/realtor-data.zip.csv
+data/*.zip
 
